@@ -13,6 +13,7 @@
 // @include      https://twitter.com/explore/tabs/for-you
 // @include      https://www.quora.com/
 // @include      https://www.quora.com/spaces
+// @include      https://www.quora.com/topic/*
 // @include      https://github.com/explore
 // @grant        none
 // ==/UserScript==
