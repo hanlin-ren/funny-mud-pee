@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         funny mud pee
 // @namespace    http://tampermonkey.net/
-// @version      0.1
+// @version      0.2
 // @description  Fuck off everything you don't wanna see in a html
 // @author       Xiaochuan Sun
 // @match        https://twitter.com/*
@@ -30,6 +30,16 @@ function isStackOverflow(url) {
     return false;
 }
 
+function firstLevel(elem, check) {
+    var d = 0, elem2 = elem;
+    while (elem2 != null && elem2 != document.documentElement) {
+        if (check(elem2)) return d;
+        d = d + 1;
+        elem2 = elem2.parentElement;
+    }
+    return -1;
+}
+
 function fuck() {
     'use strict';
 
@@ -41,7 +51,7 @@ function fuck() {
         try {
 
             var elem = all[i];
-            var nmsl = false, tmp;
+            var nmsl = false, tmp, d, z;
 
             if (elem == null) continue;
 
@@ -51,6 +61,21 @@ function fuck() {
                 tmp = elem.getAttribute("aria-label");
                 if (typeof(tmp) == "string") {
                     if (sima_tag_twitter.includes(tmp)) nmsl = true;
+                }
+                tmp = elem.innerText;
+                if (typeof(tmp) == "string") {
+                    var sima_regex_twitter = new RegExp("^由.*推广$");
+                    if (tmp == "推荐" || sima_regex_twitter.test(tmp) == true) {
+                        d = firstLevel(elem, function(elem2) {
+                            if (elem2.tagName.toLowerCase() == "article") return true;
+                            if (elem2.getAttribute("role") === "button" && elem2.getAttribute("data-focusable") === "true") return true;
+                            return false;
+                        });
+                        if (d != -1) {
+                            nmsl = true;
+                            for (z = 1; z <= d + 1; z++) elem = elem.parentElement;
+                        }
+                    }
                 }
             }
 
@@ -101,9 +126,28 @@ function fuck() {
             if (url.includes("quora.com")) {
                 tmp = elem.innerText;
                 if (typeof(tmp) == "string") {
-                    if (tmp == "Related Questions" || tmp == "Related Spaces") {
-                        for (var u = 1; u <= 5; u++) elem = elem.parentElement;
-                        nmsl = true;
+                    var sima_quora_innerText = new RegExp("^(Promoted|Sponsored|Ad) by.*");
+                    var sima_quora_list = ["Related Questions", "Related Spaces", "Related Topics", "Spaces Related to ", "Discover Spaces", "Sponsored", "Start Now", "Read More", "Play Now", "Download"];
+                    if (sima_quora_list.includes(tmp) || sima_quora_innerText.test(tmp)) {
+                        d = firstLevel(elem, function(elem2) {
+                            var className = elem2.className;
+                            var styleName = elem2.getAttribute("style");
+                            if (typeof(className) == "string" && typeof(styleName) == "string") {
+                                if (className == "q-box" && styleName == "box-sizing: border-box; direction: ltr; position: sticky; top: 80px;") return true;
+                                if (className == "q-box" && styleName == "box-sizing: border-box; direction: ltr;") return true;
+                                if (className == "q-box " && styleName == "box-sizing: border-box; direction: ltr;") return true;
+                                if (className == "q-box qu-mt--small" && styleName == "box-sizing: border-box; direction: ltr;") return true;
+                                if (className == "q-box" && styleName == "style=box-sizing: border-box; direction: ltr; position: relative; top: 0px;") return true;
+                                if (className == "q-box qu-borderAll qu-borderRadius--small qu-borderColor--raised qu-boxShadow--small qu-mt--small qu-mb--small qu-bg--raised" && styleName == "box-sizing: border-box; direction: ltr;") return true;
+                                if (className == "q-box qu-mt--n_small qu-ml--n_medium qu-mb--n_small" && styleName == "box-sizing: border-box; direction: ltr;") return true;
+                            }
+                            return false;
+                        });
+                        if (d != -1) {
+                            //alert('nmsl ' + elem.innerHTML);
+                            for (z = 1; z <= d; z++) elem = elem.parentElement;
+                            nmsl = true;
+                        }
                     }
                 }
             }
@@ -124,15 +168,15 @@ function fuck() {
                 }
                 tmp = elem.id;
                 if (typeof(tmp) == "string") {
-                    var sima_id_baidu = ["s-top-left", "content_right", "rs", "right-billboard"];
+                    var sima_id_baidu = ["s-top-left", "content_right", "rs", "right-billboard", "line_one", "line_two", "line_three", "line_four", "paper-banner-xueshubanner"];
                     if (sima_id_baidu.includes(tmp)) nmsl = true;
                 }
                 tmp = elem.getAttribute("data-tuiguang");
                 if (typeof(tmp) == "string" && tmp != null) {
                     if (elem.innerText == "广告") {
-                        for (var v = 1; v <= 5; v++) elem = elem.parentElement;
+                        for (z = 1; z <= 5; z++) elem = elem.parentElement;
                         nmsl = true;
-                        alert('nmsl');
+                        //alert('nmsl');
                     }
                 }
                 tmp = elem.getAttribute("tpl");
